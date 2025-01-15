@@ -1,0 +1,375 @@
+/// INTRODUCTION TO PANEL DATA
+use "C:\Users\dawso\OneDrive\Desktop\ECO-6003A\Workshops\panel.dta"
+
+describe
+
+codebook
+
+* Informing STATA we have panel data
+xtset id wave
+
+* Inspecting some of the data
+list id wave linc age education job_hours male healthy region in 217/227, sepby(id)
+list id wave linc age education job_hours male healthy region in 217/227, sepby(id) abbreviate(12)
+
+* Describing the participation pattern of respondents
+xtdes
+
+* Creating a variable to estalish a balanced panel
+bysort id: generate T=_N
+generate balanced = 0
+replace balanced=1 if T==6
+tab balanced
+
+xtdes if T==6
+
+* Creating a wave variable
+gen t = wave - 1
+
+* Demonstrating how the descriptive statistics vary by sample size
+
+
+sum linc age job_hours healthy male i.education
+sum linc age job_hours healthy male i.education if T==6
+sum linc age job_hours healthy male i.education if t==1
+
+
+* Creating age squared (alternatively can use factor variables - see regression commands below)
+gen age2 = age^2
+
+* The following regressions estimate an income model with the full (unbalanced) sample
+* and then for the balanced sample and then for a single wave.
+
+reg linc age age2 male job_hours healthy i.education
+reg linc c.age##c.age male job_hours healthy i.education
+reg linc c.age##c.age male job_hours healthy i.education if T==6
+reg linc c.age##c.age male job_hours healthy i.education if t==1
+
+
+* Balanced panel with time variables added
+
+reg linc c.age##c.age male job_hours healthy i.education t if T==6
+reg linc c.age##c.age male job_hours healthy i.education i.t if T==6
+
+* Balanced panel with robust standard errors
+
+reg linc c.age##c.age male job_hours healthy i.education t if T==6, robust
+
+* Balanced panel with clustered standard errors
+
+reg linc c.age##c.age male job_hours healthy i.education t if T==6, cluster(id)
+
+/// PANEL DATA METHODS
+
+* open panel.dta
+
+* first we again restrict our sample to the balanced one and create all necessary variables
+
+bysort id: generate T=_N
+keep if T==6
+xtset id wave
+gen t=wave-1
+
+// POLS
+reg linc c.age##c.age  male job_hours healthy i.education t
+estimates store POLS
+
+reg linc c.age##c.age  male job_hours healthy i.education t, vce(cluster id)
+estimates store POLS_cluster
+
+esttab POLS POLS_cluster using POLS.rtf, replace se r2 title ("POLS vs POLS_cluster") mtitles
+
+// RE
+
+xtreg linc c.age##c.age  male job_hours healthy i.education t,  theta
+estimates store RE
+
+xtreg linc c.age##c.age  male job_hours healthy i.education t, vce(cluster id) theta
+estimates store RE_cl
+
+esttab POLS_cluster RE RE_cl using RE.rtf, replace se r2  title("POLS vs RE") mtitles				
+		
+
+
+// FE without time index
+xtreg linc c.age##c.age  male job_hours healthy i.education, fe vce(cluster id)
+estimates store FE1
+
+// FE with time index 
+// If don't exclude "age", Stata drops the time index here
+xtreg linc c.age##c.age  male job_hours healthy i.education t, fe vce(cluster id)
+
+
+display -_b[c.age] / (2*_b[c.age#c.age])
+
+// here I use only age squared, so can estimated the effect of t
+xtreg linc c.age#c.age  male job_hours healthy i.education t, fe vce(cluster id)
+estimates store FE2
+
+// FE with time dummies
+/* If you don't drop age manually, stata will drop one of the time dummies, 
+in which case the interpretation on the time dummies becomes very clumbersome*/
+
+xtreg linc c.age#c.age  male job_hours healthy i.education i.t, fe vce(cluster id)
+estimates store FE3
+
+esttab RE FE1 FE2 FE3 using RE_FE.rtf, replace se r2  title("Random Effects vs Fixed Effects") mtitles		
+
+// note that using option  vce(robust) instead of vce(cluster id) makes no difference in this case.
+// They both produce clustered SEs.
+
+// A note about the education dummies
+
+xttrans education
+
+// or
+
+xttab education
+
+/*
+The Between column, tells the proportion of people in a given category, at 
+least in one of the waves.
+
+E.g 52.59% were in tertiary education at least in one wave, 42.58% were
+in secondary education at least in one wave and 8.72% were in elementary 
+education at least in one wave. As these three percentages add up to more 
+than 100%, it means that there are a few people who switched from one category to another. 
+Actually the 103.9% figure, tells us that 3.9% switched from one educ level to another.
+
+The Within column, is an indicator of how 'time-persistent' each category is.
+For example, people who are in elementary education in a given wave, remain in elementary
+education in 92.62% of waves.
+Or, people who are in tertiary education in a given wave, remain in tertiary
+education in 97.43% of waves.
+The closer these are to 100%, the higher the time-persistence of the variable
+(meaning that it is less likely to change from one category to another over the
+sample period).
+*/
+
+*** Another way of seeing the within and between variation in terms of standard 
+*** deviations is to use the xtsum command
+
+xtsum education
+
+* Consideration of region as an additional explanatory variable
+
+xttrans region
+// or
+xttab region
+
+xtsum region
+
+xtreg linc c.age#c.age job_hours healthy male i.education t i.region, fe vce(cluster id) 
+test 2.region 3.region 4.region 5.region
+
+* but in RE
+
+xtreg  linc c.age##c.age job_hours healthy male i.education t i.region, re vce(cluster id) 
+test 2.region 3.region 4.region 5.region
+* indeed the regional effect is much stronger than what the FE model indicates.
+
+xtsum age age2 t
+* Which demonstrates that the within variation of age and t are the same
+
+* Fixed effects as a dummy variable regression
+
+gen N=_n
+reg linc job_hours i.id if N<=60
+xtreg linc job_hours if N<=60, fe
+
+
+* Fixed effects as a correlated random effects model
+
+gen age2=age^2
+tab education, gen(educ)
+
+// first we need to generate the individual-specific means
+// for all time-varying variables
+bysort id: egen mage=mean(age)
+bysort id: egen mage2=mean(age2)
+bysort id: egen mjob_hours=mean(job_hours)
+bysort id: egen mhealthy=mean(healthy)
+bysort id: egen meduc1=mean(educ1)
+bysort id: egen meduc2=mean(educ2)
+bysort id: egen meduc3=mean(educ3)
+
+
+* Correlated Random Effects (Mundlak approach)
+xtreg linc age2 job_hours healthy male i.education mage mage2 mjob_hours mhealthy ///
+meduc2 meduc3 t, re vce(cluster id)
+
+estimates store CRE
+esttab CRE using CRE.rtf, replace se r2  			
+
+// the above model gives the same results as:
+xtreg linc c.age#c.age job_hours healthy male i.education t, fe vce(cluster id)
+ 	
+	
+
+// Regression based Hausman test:
+
+* without heteroskedasticity and serial correlation robust SEs
+
+xtreg linc age2 job_hours healthy male i.education mage mage2 mjob_hours mhealthy ///
+meduc2 meduc3 t, re
+
+test mage mage2 mjob_hours mhealthy meduc2 meduc3
+
+* with heteroskedasticity and serial correlation robust SEs
+
+xtreg linc age2 job_hours healthy male i.education mage mage2 mjob_hours mhealthy ///
+meduc2 meduc3 t, re vce(cluster id) 
+
+test mage mage2 mjob_hours mhealthy meduc2 meduc3
+
+
+
+/// INTRODUCTION TO TREATMENT EFFECTS
+
+******************************************************
+* Open placement1.dta datafile.  This datafile contains a cross-section of students who went on placement (treatment group) and students who did not go on placement (control group)
+
+
+* to start with:
+tab placement
+* So, 202 students out of 297 did a placement (68.01%))  
+
+ttest pt, by(placement) unequal
+
+/* the estimated difference in student performance is 2.932, meaning that students that went on placement achieved a final year average that was 2.932 percentage points higher compared to those that did not go on a placement. 
+
+This difference is statistically different from zero. 
+Note that we include the option "unequal", to control for possible unequal 
+variance of student performance between treatment and control groups (heteroskedasticity)
+*/
+
+
+reg pt placement, vce(robust) 
+
+// where vce(robust) is used to also obtain heteroskedasticity consistent SEs
+
+/* We see that this regression gives exactly the same result with the t-test.
+
+ Most probably, the estimated effect above does not provide an unbiased estimate
+ of the true ATT (that is, it does not represent the causal effect of placement on     
+ student performance). This is because selection into treatment (placement) is not 
+ random. 
+ People who went on placement may be quite different in terms of both 
+ observed and unobserved characteristics from those students that did not do a placement. 
+ 
+ To see this, we can summarise the means of our observed characteristics for 
+ both placement and non-placement students */
+
+sum male ethnicity mathsa econa yr1 if placement==1
+sum male ethnicity mathsa econa yr1 if  placement==0
+
+* or just run a probit regression of the trained variable on the explanatory 
+* variables
+
+probit placement male ethnicity mathsa econa yr1
+								
+
+								
+/* We can see that students who have a maths background (i.e. A level maths) and a stronger year 1 performance are more likely to go on a placement year.  It is likely therefore that the estimates generated earlier in parts (a) and (b) are likely to be (positively) biased, since the average (final year) performance of those that went on placement, in the absence of treatment (i.e. going on placement), is likely to be higher than the average performance of those students who did not go on placement. 
+
+So, we have a problem of endogenous treatment that biases our estimate of
+the ATT. */
+
+
+reg pt placement male ethnicity mathsa econa yr1, vce(robust)
+
+/* so, controlling for explanatory variables associated with student performance, the placement effect drops to 1.897.  So, our previous estimated ATT was upward bias.
+Does this now represent an estimate of the true ATT / ATE? 
+
+
+ Although this estimate is expected to be less biased, we cannot be certain
+ that this is an unbiased estimate. Apart from the differences in observed 
+ characteristics, those who participated in the placement year may still be different 
+ from those who did not do a placement with regard to other unobserved 
+ characteristics, such as motivation. So, there may still be some
+ selection bias. */
+
+
+/// DIFFERENCE IN DIFFERENCE
+
+
+
+***************************************************************************************
+
+** Open placement2.dta datafile.  This datafile uses the same data as placement1 but now has data on student performance before the placement for both treatment and control groups.
+
+** To being with we look at the treatment group before and after being treated
+
+** SInce we now have a panel dataset we can use panel data (and time-series) methods.  To begin with however we will simple look at the differences between those treated (i.e. went on placement) before and after the placement year.
+
+xtset id year
+
+mean pt if year==1 & placement==1
+mean pt if year==2 & placement==1
+
+display (59.44084 - 57.70173)
+
+
+/* We can generate the same results as above using a first difference or Fixed Effects framework */
+
+* First difference
+reg d.pt if placement==1
+
+* Fixed effects regression model 
+
+gen D = 0
+replace D = 1 if placement==1 & year==2
+
+xtreg pt D if placement==1, fe
+
+/* In each case we can see that the effect of placement is estimated to be 1.739.  This figure is smaller than the figures we obtained earlier but is still likely to be biased upwards since we are simply looking at performance before and after treatment (placement) of just those that were treated (did a placement). */
+
+** Now we will include the control group
+
+mean pt if year==1 & placement ==0
+mean pt if year==2 & placement==0
+
+display (56.5093 - 56.17754)
+
+* Diff-in-Diff
+
+display (59.44084 - 57.70173) - (56.5093 - 56.17754)
+
+* Again we can generate the same results using a first difference framework 
+
+* First difference
+
+reg d.(pt D) 
+
+* But can also use a POLS framework too.  This is a popular approach in applied research
+
+/* pooled regression model */
+
+gen A =.
+replace A = 0 if year==1
+replace A = 1 if year==2
+
+reg pt i.placement##i.A, vce(cluster id) 
+
+/* We see that the effect of placement now drops to 1.407 */
+
+
+* With additional control variables
+
+reg pt i.placement##i.A male ethnicity mathsa econa yr1, vce(cluster id)
+
+/* Here we see the effect actually increases in size (and also is now slighly more significant).  However we also note that due to missing values, the sample size is now smaller */
+
+
+
+
+
+/// COURSEWORK PREP LINK
+
+https://learn.uea.ac.uk/ultra/courses/_147841_1/outline/lti/launchFrame?toolHref=https:~2F~2Flearn.uea.ac.uk~2Fwebapps~2Fblackboard~2Fexecute~2Fblti~2FlaunchLink%3Fcourse_id%3D_147841_1%26content_id%3D_4951274_1%26from_ultra%3Dtrue&toolTitle=ECO-6003A%20-%20Week%2012%20Workshop%20(Coursework%20Prep)
+
+/// OTHER USEFUL LINKS
+https://www.youtube.com/watch?v=stuStm8qTEM
+https://www.youtube.com/watch?v=qhkpbf15T-8
+
+
