@@ -1,6 +1,58 @@
 // Number of children
-gen chi1 = Children if children <= 2
+gen chi1 = children if children <= 2
 replace chi1 = 0 if children > 2
 
-gen chi1 = Children - 2 if children > 2
+gen chi2 = children - 2 if children > 2
 replace chi2 = 0 if children <= 2
+gen chi3 = chi2^2
+
+label var chi1 "linear children under 2"
+label var chi2 "linear term over 2 children"
+label var chi3 "quadratic term over 2 children"
+
+//Age
+gen age2 = age^2
+label var age2 "quadratic age term"
+
+/// Income
+ssc install winsor
+winsor gincome, gen(winsor_gincome) p(0.01)
+drop winsor_gincome
+winsor gincome, gen(winsor_gincome) p(0.03)
+drop winsor_gincome
+winsor gincome, gen(winsor_gincome) p(0.05)
+drop winsor_gincome
+winsor gincome, gen(winsor_gincome) p(0.1)
+drop winsor_gincome
+
+winsor gincome, gen(winsor_gincome) p(0.03) highonly
+
+xtile quartile_gincome = winsor_gincome, nq(4)
+tab quartile_gincome
+sum winsor_gincome if quartile_gincome==1
+sum winsor_gincome if quartile_gincome==2
+sum winsor_gincome if quartile_gincome==3
+sum winsor_gincome if quartile_gincome==4
+
+winsor nincome, gen(winsor_nincome) p(0.03) highonly
+xtile quartile_nincome = winsor_nincome, nq(4)
+sum winsor_nincome if quartile_nincome==1
+sum winsor_nincome if quartile_nincome==2
+sum winsor_nincome if quartile_nincome==3
+sum winsor_nincome if quartile_nincome==4
+
+// Histograms 
+histogram gincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of Gross Income") xtitle("Monthly Gross Income") ytitle("Density") note("Includes Normal Distribution Overlay")
+
+histogram nincome if nincome <= 30000, bin(50) normal color(gs14) lcolor(black) title("Histogram of Net Income") xtitle("Monthly Net Income") ytitle("Density") note("Includes Normal Distribution Overlay")
+
+histogram winsor_gincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of Winsorised Gross Income") xtitle("Winsorised Monthly Gross Income") ytitle("Density") note("Winsorised at 3% and 97%")
+
+histogram winsor_nincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of Winsorised Net Income") xtitle("Winsorised Monthly Net Income") ytitle("Density") note("Winsorised at 3% and 97%")
+
+
+
+
+
+
+
