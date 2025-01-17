@@ -11,6 +11,7 @@ label var chi2 "linear term over 2 children"
 label var chi3 "quadratic term over 2 children"
 
 //Age
+keep if age <= 90
 gen age2 = age^2
 label var age2 "quadratic age term"
 
@@ -50,9 +51,60 @@ histogram winsor_gincome, bin(50) normal color(gs14) lcolor(black) title("Histog
 
 histogram winsor_nincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of Winsorised Net Income") xtitle("Winsorised Monthly Net Income") ytitle("Density") note("Winsorised at 3% and 97%")
 
+gen top_quartile_gincome = (quartile_gincome == 4)
+tab quartile_gincome top_quartile_gincome
+
+gen bottom_quartile_gincome = (quartile_gincome == 1)
+tab quartile_gincome bottom_quartile_gincome
+
+gen top_quartile_nincome = (quartile_nincome == 4)
+tab quartile_nincome top_quartile_nincome
+
+gen bottom_quartile_nincome = (quartile_nincome == 1)
+tab quartile_nincome bottom_quartile_nincome
+
+label var top_quartile_gincome "Top Quartile of Gross Income"
+label var bottom_quartile_gincome "Bottom Quartile of Gross Income"
+label var top_quartile_nincome "Top Quartile of Net Income"
+label var bottom_quartile_nincome "Bottom Quartile of Net Income"
+
+/// Education
+gen educ_level = .
+replace educ_level = 1 if inlist(educat, 3, 4, 5, 9)
+replace educ_level = 2 if inlist(educat, 1, 2)
+label define educ_level_lbl 1 "Before Degree" 2 "After Degree"
+label values educ_level educ_level_lbl
+label var educ_level "before/after higher education dummy"
+tab educ_level
 
 
+/// Job title
+gen active = inlist(jbstat, 1, 2, 11)
+gen ue_inact = inlist(jbstat, 3, 8, 9, 10, 13)
+gen outoflf = inlist(jbstat, 4, 5, 6, 7, 12, 97)
 
+label define active_labels 1 "Active Employment" 0 "Not Active Employment"
+label define ue_inact_labels 1 "Unemployed/Inactive" 0 "Not Unemployed/Inactive"
+label define outolf_labels 1 "Out of the Labour Force" 0 "Not Out of the Labour Force"
 
+label values active active_labels
+label values ue_inact ue_inact_labels
+label values outoflf outolf_labels
 
+label var active "Active Employment Status"
+label var ue_inact "Unemployed or Inactive Status"
+label var outoflf "Out of Labour Force Status"
+
+///Marrystat
+
+gen marital_status_group = .
+replace marital_status_group = 1 if inlist(marryst, 1, 10)
+replace marital_status_group = 2 if inlist(marryst, 2, 3, 8, 9)
+replace marital_status_group = 3 if inlist(marryst, 4, 5, 6, 7)
+
+label define marital_status_group_lbl 1 "Single or Living as Couple" 2 "Married/Partnerships" 3 "Separated/Divorced/Widowed"
+label values marital_status_group marital_status_group_lbl
+
+tab marital_status_group
+label variable marital_status_group "Marital Status Categorical Variable"
 
