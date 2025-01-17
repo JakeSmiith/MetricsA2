@@ -1,0 +1,6 @@
+// Number of children
+gen chi1 = Children if children <= 2
+replace chi1 = 0 if children > 2
+
+gen chi1 = Children - 2 if children > 2
+replace chi2 = 0 if children <= 2
