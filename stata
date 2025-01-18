@@ -1,7 +1,10 @@
 //Task 1
 keep if time <= 3
+keep if region ==8 | region ==9
 gen revghq = 36 - ghq
-
+bysort pidp: gen T=_N
+keep if T==3
+xtset pidp time
 
 // Number of children
 gen children_cat = .
@@ -14,25 +17,10 @@ gen children_over2_sq = children^2 if children > 2
 replace children_over2_sq = 0 if children <= 2
 label var children_over2_sq "Quadratic term for households with 3+ children"
 
-
-
 //Age
 keep if age <= 90
-sum age
-//Determining optimal number of nknots in panel data
-egen cluster_count = tag(pidp)
-sum cluster_count
-count if cluster_count == 1
-*32,549 = k
-sum time
-*1.961332
-gen avg_wave = 1.961332
-
-
-
-mkspline age_spline = age, cubic nknots(5)
-
-
+gen age2 = age^2
+label var age2 "quadratic age expression"
 
 /// Income
 ssc install winsor
@@ -98,21 +86,11 @@ tab educ_level
 
 
 /// Job title
-gen active = inlist(jbstat, 1, 2, 11)
-gen ue_inact = inlist(jbstat, 3, 8, 9, 10, 13)
-gen outoflf = inlist(jbstat, 4, 5, 6, 7, 12, 97)
-
-label define active_labels 1 "Active Employment" 0 "Not Active Employment"
-label define ue_inact_labels 1 "Unemployed/Inactive" 0 "Not Unemployed/Inactive"
-label define outolf_labels 1 "Out of the Labour Force" 0 "Not Out of the Labour Force"
-
-label values active active_labels
-label values ue_inact ue_inact_labels
-label values outoflf outolf_labels
-
-label var active "Active Employment Status"
-label var ue_inact "Unemployed or Inactive Status"
-label var outoflf "Out of Labour Force Status"
+gen labour_status = .
+replace labour_status = 1 if inlist(jbstat, 1, 2)
+replace labour_status = 2 if inlist(jbstat, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 97)
+label define labour_status_lbl 1 "Employed" 2 "Unemployed or Out of Labour Force" 
+label values labour_status labour_status_lbl
 
 ///Marrystat
 
@@ -139,10 +117,31 @@ label define race_cat 1 "White" 2 "Mixed/Multiple Ethnic Groups" 3 "Asian" 4 "Bl
 label values race_cat race_cat
 tab race_cat
 
-/// Interaction terms
+/// Interaction terms (for pwcorr)
 gen age_ses_interaction = age * top_quartile_gincome
+gen age_gender = age * male
 gen gender_employment_interaction = male * active
 gen children_marital_interaction = children_over2_sq * marital_status_group
 gen education_income_interaction = educ_level * top_quartile_gincome
+
+label var children_cat "categorical number of children"
+label var race_cat "categorical race category"
+label var age_ses_interaction "Interaction between Age and Socioeconomic Status (Top Quartile of Income)"
+label var age_gender "Interaction between Age and Gender"
+label var gender_employment_interaction "Interaction between Gender and Active Employment Status"
+label var children_marital_interaction "Interaction between Children (Over 2) and Marital Status"
+label var education_income_interaction "Interaction between Education Level and Top Quartile of Income"
+
+summarize age male children_cat children_over2_sq age2 top_quartile_gincome bottom_quartile_gincome top_quartile_nincome bottom_quartile_nincome educ_level active ue_inact outoflf marital_status_group race_cat age_ses_interaction gender_employment_interaction children_marital_interaction education_income_interaction, detail
+pwcorr revghq children_cat children_over2_sq age age2 winsor_gincome top_quartile_gincome bottom_quartile_gincome educ_level active ue_inact outoflf marital_status_group race_cat age_ses_interaction age_gender gender_employment_interaction children_marital_interaction education_income_interaction
+
+//High pwcorr between age_ses_interaction and education_income_interaction
+pca age_ses_interaction education_income_interaction
+predict pc1 pc2
+regress revghq pc1 age educ_level top_quartile_gincome
+// Include just pc1 in final regression
+
+drop children_marital_interaction
+pwcorr revghq children_cat children_over2_sq age age2 male labour_status winsor_gincome top_quartile_gincome bottom_quartile_gincome educ_level marital_status_group race_cat pc1 age_gender gender_employment_interaction
 
 
