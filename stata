@@ -19,7 +19,17 @@ label var children_over2_sq "Quadratic term for households with 3+ children"
 //Age
 keep if age <= 90
 sum age
-di 
+//Determining optimal number of nknots in panel data
+egen cluster_count = tag(pidp)
+sum cluster_count
+count if cluster_count == 1
+*32,549 = k
+sum time
+*1.961332
+gen avg_wave = 1.961332
+
+
+
 mkspline age_spline = age, cubic nknots(5)
 
 
