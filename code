@@ -7,6 +7,7 @@ codebook
 
 * Informing STATA we have panel data
 xtset id wave
+xtdes
 
 * Inspecting some of the data
 list id wave linc age education job_hours male healthy region in 217/227, sepby(id)
