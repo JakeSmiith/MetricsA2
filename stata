@@ -3,13 +3,9 @@
 keep if time <= 3
 keep if region ==8 | region ==9
 gen revghq = 36 - ghq
-xtset pidp time
 bysort pidp: gen T=_N
-gen balanced = 0
-replace balanced=1 if T==3
-keep if balanced == 1
-tab balanced
-xtdescribe
+keep if T==3
+xtset pidp time
 
 
 
@@ -225,10 +221,38 @@ reg revghq pc1 pc2 age age2 educ_level labour_status marital_status_group race_c
 drop age age2
 reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome T
 
+/// Regressions / Output - BASELINE
+/// Gross winsorised
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome T
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome T, vce(cluster pidp)
 
+/// Net winsorised
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_nincome T
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_nincome T, vce(cluster pidp)
 
+/// Winsorised effects - quartiles gross income
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_gincome T
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_gincome T, vce(cluster pidp)
 
+/// Winsorised effects - quartiles net income
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_nincome T
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_nincome T, vce(cluster pidp)
 
+/// Winsorised effects - upper quartile gross
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_gincome T
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_gincome T, vce(cluster pidp)
+
+/// Winsorised effects - upper quartile net
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_nincome T
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_nincome T, vce(cluster pidp)
+
+/// Winsorised effects - bottom quartile gross
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome T
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome T, vce(cluster pidp)
+
+/// Winsorised effects - bottom quartile net
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_nincome T
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome T, vce(cluster pidp)
 
 pwcorr revghq children_cat children_over2_sq age age2 winsor_gincome top_quartile_gincome bottom_quartile_gincome educ_level active ue_inact outoflf marital_status_group race_cat age_ses_interaction age_gender gender_employment_interaction children_marital_interaction education_income_interaction
 
