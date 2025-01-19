@@ -65,9 +65,9 @@ histogram gincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of 
 
 histogram nincome if nincome <= 30000, bin(50) normal color(gs14) lcolor(black) title("Histogram of Net Income") xtitle("Monthly Net Income") ytitle("Density") note("Includes Normal Distribution Overlay") name(net_income_histogram, replace)
 
-histogram winsor_gincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of Winsorised Gross Income") xtitle("Winsorised Monthly Gross Income") ytitle("Density") note("Winsorised at 3% and 97%") name(winsorised_gi_hist, replace)
+histogram winsor_gincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of Winsorised Gross Income") xtitle("Winsorised Monthly Gross Income") ytitle("Density") note("Winsorised at 97%") name(winsorised_gi_hist, replace)
 
-histogram winsor_nincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of Winsorised Net Income") xtitle("Winsorised Monthly Net Income") ytitle("Density") note("Winsorised at 3% and 97%") name(winsorised_net_income_histogram, replace)
+histogram winsor_nincome, bin(50) normal color(gs14) lcolor(black) title("Histogram of Winsorised Net Income") xtitle("Winsorised Monthly Net Income") ytitle("Density") note("Winsorised at 97%") name(winsorised_net_income_histogram, replace)
 
 gen top_quartile_gincome = (quartile_gincome == 4)
 tab quartile_gincome top_quartile_gincome
@@ -217,118 +217,154 @@ estat eigenvalues
 screeplot, yline(1) title("Screeplot: Children Variables")
 estat loadings
 
-reg revghq pc1 pc2 age age2 educ_level labour_status marital_status_group race_cat winsor_gincome T
-drop age age2
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome T
+reg revghq pc1 pc2 age age2 educ_level labour_status marital_status_group race_cat winsor_gincome
+reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome
 
 /// Regressions / Output - BASELINE
+
 /// Gross winsorised
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome T
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome T, vce(cluster pidp)
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome 
+estimates store winsor_gincome1
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome, vce(cluster pidp)
+estimates store winsor_gincome2
+findit esttab
+esttab winsor_gincome1 winsor_gincome2 using 1.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) obslast mtitles compress
 
 /// Net winsorised
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_nincome T
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_nincome T, vce(cluster pidp)
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_nincome 
+estimates store winsor_nincome1
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_nincome , vce(cluster pidp)
+estimates store winsor_gincome2
+esttab winsor_nincome1 winsor_nincome2 using 1.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) obslast mtitles compress
 
 /// Winsorised effects - quartiles gross income
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_gincome T
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_gincome T, vce(cluster pidp)
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_gincome 
+estimates store quartile_gincome1
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_gincome, vce(cluster pidp)
+estimates store quartile_gincome2
+esttab quartile_gincome1 quartile_gincome2 using 1.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) obslast mtitles compress
 
 /// Winsorised effects - quartiles net income
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_nincome T
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_nincome T, vce(cluster pidp)
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_nincome 
+estimates store quartile_nincome1
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_nincome , vce(cluster pidp)
+estimates store quartile_nincome2
+esttab quartile_nincome1 quartile_nincome2 using 1.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) obslast mtitles compress
 
 /// Winsorised effects - upper quartile gross
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_gincome T
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_gincome T, vce(cluster pidp)
-
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_gincome 
+estimates store top_quartile_gincome1
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_gincome , vce(cluster pidp)
+estimates store top_quartile_gincome2
+esttab top_quartile_gincome1 top_quartile_gincome2 using 1.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) obslast mtitles compress
+ 
 /// Winsorised effects - upper quartile net
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_nincome T
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_nincome T, vce(cluster pidp)
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_nincome 
+estimates store top_quartile_nincome1
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_nincome , vce(cluster pidp)
+estimates store top_quartile_nincome2
+esttab top_quartile_nincome1 top_quartile_nincome2 using 1.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) obslast mtitles compress
 
 /// Winsorised effects - bottom quartile gross
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome T
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome T, vce(cluster pidp)
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome 
+estimates store bottom_quartile_gincome1
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome , vce(cluster pidp)
+estimates store bottom_quartile_gincome2
+esttab bottom_quartile_gincome1 bottom_quartile_gincome2 using 1.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) obslast mtitles compress
+
 
 /// Winsorised effects - bottom quartile net
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_nincome T
-reg revghq pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome T, vce(cluster pidp)
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_nincome
+estimates store bottom_quartile_nincome1
+reg revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome , vce(cluster pidp)
+estimates store bottom_quartile_nincome2
+esttab bottom_quartile_nincome1 bottom_quartile_nincome2 using 1.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) obslast mtitles compress
 
-pwcorr revghq children_cat children_over2_sq age age2 winsor_gincome top_quartile_gincome bottom_quartile_gincome educ_level active ue_inact outoflf marital_status_group race_cat age_ses_interaction age_gender gender_employment_interaction children_marital_interaction education_income_interaction
+/// Interaction terms models with income variables
 
-//High pwcorr between age_ses_interaction and education_income_interaction
-pca age_ses_interaction education_income_interaction
-predict pc1 pc2
-reg revghq pc1 age educ_level top_quartile_gincome
-// Include just pc1 in final regression
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.winsor_gincome#i.male c.winsor_gincome#i.marital_status_group c.winsor_gincome#i.labour_status c.winsor_gincome#i.educ_level
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_gincome income_gender1 income_marry1 income_ls1 income_educat1
 
-drop children_marital_interaction
-pwcorr revghq children_cat children_over2_sq age age2 male labour_status winsor_gincome top_quartile_gincome bottom_quartile_gincome educ_level marital_status_group race_cat pc1 age_gender gender_employment_interaction
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.winsor_nincome#i.male c.winsor_nincome#i.marital_status_group c.winsor_nincome#i.labour_status c.winsor_nincome#i.educ_level
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat winsor_nincome income_gender2 income_marry2 income_ls2 income_educat2
 
-drop bottom_quartile_gincome bottom_quartile_nincome
-reg revghq top_quartile_gincome bottom_quartile_gincome
-reg revghq winsor_gincome top_quartile_gincome bottom_quartile_gincome
-reg revghq winsor_gincome
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.quartile_gincome#i.male c.quartile_gincome#i.marital_status_group c.quartile_gincome#i.labour_status c.quartile_gincome#i.educ_level
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_gincome income_gender3 income_marry3 income_ls3 income_educat3
 
-reg revghq top_quartile_nincome bottom_quartile_nincome
-reg revghq winsor_nincome top_quartile_nincome bottom_quartile_nincome
-reg revghq winsor_nincome
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat quartile_nincome c.quartile_nincome#i.male c.quartile_nincome#i.marital_status_group c.quartile_nincome#i.labour_status c.quartile_nincome#i.educ_level
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat quartile_nincome income_gender4 income_marry4 income_ls4 income_educat4
 
-pwcorr revghq winsor_nincome children_cat children_over2_sq age age2 male labour_status educ_level marital_status_group race_cat pc1 age_gender gender_employment_interaction
-pwcorr revghq winsor_gincome children_cat children_over2_sq age age2 male labour_status educ_level marital_status_group race_cat pc1 age_gender gender_employment_interaction
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_gincome c.top_quartile_gincome#i.male c.top_quartile_gincome#i.marital_status_group c.top_quartile_gincome#i.labour_status c.top_quartile_gincome#i.educ_level
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_gincome income_gender5 income_marry5 income_ls5 income_educat5
 
-pca pc1 winsor_nincome
-predict ses_pca1
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_nincome c.top_quartile_nincome#i.male c.top_quartile_nincome#i.marital_status_group c.top_quartile_nincome#i.labour_status c.top_quartile_nincome#i.educ_level
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat top_quartile_nincome income_gender6 income_marry6 income_ls6 income_educat6
 
-reg revghq winsor_nincome children_cat children_over2_sq age age2 male labour_status educ_level marital_status_group race_cat pc1 age_gender gender_employment_interaction
-reg revghq winsor_gincome children_cat children_over2_sq age age2 male labour_status educ_level marital_status_group race_cat pc1 age_gender gender_employment_interaction
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_gincome c.bottom_quartile_gincome#i.male c.bottom_quartile_gincome#i.marital_status_group c.bottom_quartile_gincome#i.labour_status c.bottom_quartile_gincome#i.educ_level
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_gincome income_gender7 income_marry7 income_ls7 income_educat7
 
-reg revghq winsor_gincome children_cat children_over2_sq age age2 male labour_status educ_level marital_status_group race_cat age_gender gender_employment_interaction
-reg revghq children_cat children_over2_sq age age2 male labour_status educ_level marital_status_group race_cat ses_pca1 age_gender gender_employment_interaction
-vif
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_nincome c.bottom_quartile_nincome#i.male c.bottom_quartile_nincome#i.marital_status_group c.bottom_quartile_nincome#i.labour_status c.bottom_quartile_nincome#i.educ_level
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat bottom_quartile_nincome income_gender8 income_marry8 income_ls8 income_educat8
 
-reg revghq age male age_gender
-test age_gender
-reg revghq age male
-reg revghq age age2 male age_gender
-reg revghq age age2 male 
+// Detailed pwcorr
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat income_gender1
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat income_marry1  
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat income_ls1
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat income_educat1
 
-reg revghq age ses_pca1 if male == 1
-reg revghq age ses_pca1 if male == 0
+// Rank - 1) income_gender income_ls1
+pwcorr revghq age age2 pc1 pc2 educ_level labour_status marital_status_group race_cat income_gender1 income_ls1
 
-reg revghq age age2 ses_pca1 children_cat children_over2_sq labour_status educ_level gender_employment_interaction marital_status_group race_cat
-reg revghq age age2 ses_pca1 children_cat children_over2_sq labour_status educ_level gender_employment_interaction marital_status_group race_cat if male==1
-reg revghq age age2 ses_pca1 children_cat children_over2_sq labour_status educ_level gender_employment_interaction marital_status_group race_cat if male==0
+/// Decided on income_gender as the moderating variable
+/// winsorised gross income
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.winsor_gincome#i.male 
+estimates store winsor_gincome3
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.winsor_gincome#i.male, vce(cluster pidp)
+estimates store winsor_gincome4
 
-reg revghq age c.age##c.age ses_pca1 children_cat children_over2_sq labour_status educ_level ib(1).race_cat ib(2).marital_status_group i.male#i.labour_status i.male#i.marital_status_group i.male#i.age T
+/// winsorised net income
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.winsor_nincome#i.male 
+estimates store winsor_nincome3
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.winsor_nincome#i.male, vce(cluster pidp)
+estimates store winsor_nincome4
 
-reg revghq c.age#c.age male ib(1).race_cat children_cat labour_status educ_level winsor_nincome T
-reg revghq c.age##c.age male ib(1).race_cat children_cat labour_status educ_level winsor_nincome T, vce(cluster id)
+/// quartile gross income
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.quartile_gincome#i.male
+estimates store quartile_gincome3
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.quartile_gincome#i.male, vce(cluster pidp)
+estimates store quartile_gincome4
 
-
-
-reg revghq children_cat children_over2_sq c.age#c.age male labour_status educ_level ib(1).marital_status_group ib(1).race_cat ses_pca1 c.age#i.male i.male#i.labour_status T
-estimates store POLS
-reg revghq children_cat children_over2_sq c.age#c.age male labour_status educ_level ib(1).marital_status_group ib(1).race_cat ses_pca1 c.age#i.male i.male#i.labour_status T, vce(cluster pidp)
-estimates store POLS_cluster
-findit esttab
-esttab POLS POLS_cluster using POLS.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) title("POLS vs POLS_cluster") obslast mtitles compress
-
-xtreg revghq children_cat children_over2_sq c.age##c.age male labour_status educ_level ib(1).marital_status_group ib(1).race_cat ses_pca1 c.age#i.male#i.labour_status T, re
-estimates store RE
-xtreg revghq children_cat children_over2_sq c.age##c.age male labour_status educ_level ib(1).marital_status_group ib(1).race_cat ses_pca1 c.age#i.male#i.labour_status T, re vce(cluster pidp)
-estimates store RE_Cluster
-esttab RE RE_Cluster using RE.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) title("RE vs RE_Cluster") obslast mtitles compress
-
-xtreg revghq children_cat children_over2_sq c.age##c.age male labour_status educ_level ib(1).marital_status_group ib(1).race_cat ses_pca1 c.age#i.male#i.labour_status T, fe
-estimates store FE
-xtreg revghq children_cat children_over2_sq c.age##c.age male labour_status educ_level ib(1).marital_status_group ib(1).race_cat ses_pca1 c.age#i.male#i.labour_status T, fe vce(cluster pidp)
-estimates store FE_Cluster
-esttab FE FE_Cluster using FE.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) title("FE vs FE_Cluster") obslast mtitles compress
-
-esttab POLS_Cluster RE_Cluster FE_Cluster using all.rtf, replace se r2 star(* 0.1 ** 0.05 *** 0.01) title("FE vs FE_Cluster") obslast mtitles compress
-
-/// CRE - generating individual-specific means
+/// quartile net income
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.quartile_nincome#i.male
+estimates store quartile_nincome3
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.quartile_nincome#i.male, vce(cluster pidp)
+estimates store quartile_nincome4
 
 
+/// upper quartile gross income
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_gincome c.top_quartile_gincome#i.male
+estimates store top_quartile_gincome3
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_gincome c.top_quartile_gincome#i.male, vce(cluster pidp)
+estimates store top_quartile_gincome4
 
+/// upper quartile net income
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_nincome c.top_quartile_nincome#i.male
+estimates store top_quartile_nincome3
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_nincome c.top_quartile_nincome#i.male, vce(cluster pidp)
+estimates store top_quartile_nincome4
+
+
+/// lower quartile gross income
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_gincome c.bottom_quartile_gincome#i.male
+estimates store bottom_quartile_gincome3
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_gincome c.bottom_quartile_gincome#i.male, vce(cluster pidp)
+estimates store bottom_quartile_gincome4
+
+/// lower quartile net income
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_nincome c.bottom_quartile_nincome#i.male 
+estimates store bottom_quartile_nincome3
+reg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_nincome c.bottom_quartile_nincome#i.male, vce(cluster pidp)
+estimates store bottom_quartile_nincome4
+
+
+/// Fixed Effects
