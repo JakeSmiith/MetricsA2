@@ -368,3 +368,60 @@ estimates store bottom_quartile_nincome4
 
 
 /// Fixed Effects
+
+/// winsorised gross income
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.winsor_gincome#i.male, fe
+estimates store winsor_gincome5
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.winsor_gincome#i.male, vce(cluster pidp) fe
+estimates store winsor_gincome6
+
+/// winsorised net income
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.winsor_nincome#i.male, fe
+estimates store winsor_nincome5
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.winsor_nincome#i.male, vce(cluster pidp) fe
+estimates store winsor_nincome6
+
+/// quartile gross income
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.quartile_gincome#i.male, fe
+estimates store quartile_gincome5
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.quartile_gincome#i.male, vce(cluster pidp) fe
+estimates store quartile_gincome6
+
+/// quartile net income
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.quartile_nincome#i.male, fe
+estimates store quartile_nincome3
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_nincome c.quartile_nincome#i.male, vce(cluster pidp) fe
+estimates store quartile_nincome4
+
+/// upper quartile gross income
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_gincome c.top_quartile_gincome#i.male, fe
+estimates store top_quartile_gincome5
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_gincome c.top_quartile_gincome#i.male, vce(cluster pidp) fe
+estimates store top_quartile_gincome6
+
+/// upper quartile net income
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_nincome c.top_quartile_nincome#i.male, fe
+estimates store top_quartile_nincome5
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat top_quartile_nincome c.top_quartile_nincome#i.male, vce(cluster pidp) fe
+estimates store top_quartile_nincome6
+
+/// lower quartile gross income
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_gincome c.bottom_quartile_gincome#i.male, fe
+estimates store bottom_quartile_gincome5
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_gincome c.bottom_quartile_gincome#i.male, vce(cluster pidp) fe
+estimates store bottom_quartile_gincome6
+
+/// lower quartile net income
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_nincome c.bottom_quartile_nincome#i.male, fe
+estimates store bottom_quartile_nincome5
+xtreg revghq c.age##c.age pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat bottom_quartile_nincome c.bottom_quartile_nincome#i.male, vce(cluster pidp) fe
+estimates store bottom_quartile_nincome6
+
+/// Modelling for time index
+gen t = mdy(istrtdaty, istrtdatm, istrtdatd)
+format t %td
+
+/// winsorised gross income
+xtreg revghq pc1 pc2 educ_level labour_status ib(1).marital_status_group ib(1).race_cat winsor_gincome c.winsor_gincome#i.male t
+
+
